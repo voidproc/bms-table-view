@@ -19,12 +19,13 @@ SONGDATA_DB_PATH = 'db/songdata.db'
 
 # 難易度表URL
 TABLE_LIST = [
+    { 'name': 'NEW GENERATION 通常難易度表', 'url': 'https://rattoto10.jounin.jp/table.html' },
     { 'name': 'NEW GENERATION 発狂難易度表', 'url': 'https://rattoto10.jounin.jp/table_insane.html' },
     { 'name': 'Satellite', 'url': 'https://stellabms.xyz/sl/table.html' },
     { 'name': 'LN難易度表', 'url': 'http://flowermaster.web.fc2.com/lrnanido/gla/LN.html' },
 ]
 
-DEFAULT_TABLE_INDEX = 2
+DEFAULT_TABLE_INDEX = 0
 
 
 class HtmlBmsTableParser(HTMLParser):
@@ -150,6 +151,7 @@ class MainWindow(tk.Tk):
         self.treeview.column('diff', width=80)
         self.treeview.heading('#0', text='Path/Title')
         self.treeview.heading('diff', text='差分')
+        self.treeview.bind('<3>', self._on_treeview_rclick)
 
         self.sheet.grid(row=0, column=0, sticky='nsew', padx=4, pady=2)
         self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
@@ -274,6 +276,12 @@ class MainWindow(tk.Tk):
             for diff in diff_list:
                 self.treeview.insert(parent=iid, index='end', text=diff['title'], values=[diff['diff']])
 
+    def _on_treeview_rclick(self, event):
+        iid = self.treeview.identify_row(y=event.y)
+        if self.treeview.parent(iid) != '':
+            iid = self.treeview.parent(iid)
+
+        print(self.treeview.item(iid)['text'])
 
 def read_songdata_db(songdata_db_path):
     connection = sqlite3.connect(songdata_db_path)

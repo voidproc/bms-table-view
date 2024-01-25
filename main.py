@@ -112,7 +112,10 @@ class MainWindow(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
         
-        self.sheet = Sheet(self,
+        self.table_frame = tk.Frame(self)
+        self.table_frame.grid_columnconfigure(0, weight=1)
+
+        self.sheet = Sheet(self.table_frame,
                            headers=self.HEADERS,
                            font=self.FONT_UI,
                            header_font=self.FONT_UI,
@@ -125,11 +128,11 @@ class MainWindow(tk.Tk):
         self.sheet.readonly_header(list(range(len(self.HEADERS))))
         self.sheet.hide_columns(columns=[4])
 
-        self.info_frame = tk.Frame(self)
-
-        self.check_only_notfound = CheckBox(parent=self.info_frame,
+        self.check_only_notfound = CheckBox(parent=self.table_frame,
                                             text='未所持のみ表示',
                                             command=self._on_check_only_notfound)
+
+        self.info_frame = tk.Frame(self, bd=1, relief=tk.SOLID)
 
         self.label_title = ClickableLabel(parent=self.info_frame, font=self.FONT_UI_TITLE)
 
@@ -153,11 +156,13 @@ class MainWindow(tk.Tk):
         self.treeview.heading('diff', text='差分')
         self.treeview.bind('<3>', self._on_treeview_rclick)
 
-        self.sheet.grid(row=0, column=0, sticky='nsew', padx=4, pady=2)
+        self.table_frame.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
         self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
         self.search_frame.grid(row=2, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
-        self.check_only_notfound.get().grid(row=0, column=0, sticky='w')
+        self.sheet.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
+        self.check_only_notfound.get().grid(row=1, column=0, sticky='w')
+
         self.label_title.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
         self.label_url.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
         self.label_urldiff.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)

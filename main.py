@@ -93,7 +93,7 @@ class MainWindow(tk.Tk):
         self.title('bm_sabun_collect_helper')
         self.geometry('800x600')
         self.grid_columnconfigure(0, weight=1)
-        #self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(2, weight=1)
         
         self.sheet = Sheet(self,
                            headers=self.HEADERS,
@@ -120,16 +120,34 @@ class MainWindow(tk.Tk):
 
         self.label_urlpack = ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
 
-        self.textbox_search = TextBox(parent=self.info_frame, font=self.FONT_UI)
+        self.search_frame = tk.Frame(self)
+        self.search_frame.grid_columnconfigure(0, weight=1)
+        self.search_frame.grid_rowconfigure(1, weight=1)
+
+        self.textbox_search = TextBox(parent=self.search_frame, font=self.FONT_UI)
         self.textbox_search.get().bind('<Return>', self._search_songs)
 
+        self.treeview = ttk.Treeview(master=self.search_frame, columns=('diff'), height=5)
+        self.treeview.column('#0', width=150)
+        self.treeview.column('diff', width=80)
+        self.treeview.heading('#0', text='Path/Title')
+        self.treeview.heading('diff', text='差分')
+
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=self.FONT_UI)
+        style.configure("Treeview", font=self.FONT_UI)
+
         self.sheet.grid(row=0, column=0, sticky='nsew', padx=4, pady=2)
-        self.info_frame.grid(row=1, column=0, sticky='w', padx=4, pady=2)
-        self.label_title.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
-        self.label_url.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
-        self.label_urldiff.get().grid(row=4, column=0, sticky='w', padx=4, pady=2)
-        self.label_urlpack.get().grid(row=5, column=0, sticky='w', padx=4, pady=2)
-        self.textbox_search.get().grid(row=6, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
+        self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
+        self.search_frame.grid(row=2, column=0, sticky=tk.NSEW, padx=4, pady=2)
+
+        self.label_title.get().grid(row=0, column=0, sticky='w', padx=4, pady=2)
+        self.label_url.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
+        self.label_urldiff.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
+        self.label_urlpack.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
+
+        self.textbox_search.get().grid(row=0, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
+        self.treeview.grid(row=1, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
     def set_song_db(self, df_song_db):
         self.df_song_db = df_song_db
@@ -139,9 +157,10 @@ class MainWindow(tk.Tk):
         self.df_table = df_table
         self.df_table_view = df_table.drop_duplicates(subset='index')
 
-        self.sheet.select_all()
-        self.sheet.delete_rows(self.sheet.get_selected_rows())
+        # シートをクリア
+        self._clear_sheet()
 
+        # シートに曲リストを表示
         df = self.df_table_view
         for level, title, artist, found, index in zip(df['level'], df['title'], df['artist'], df['found'], df['index']):
             self.sheet.insert_row(values=(f'{self.table_header["symbol"]}{level}', title, artist, found, index), idx='end')
@@ -150,6 +169,9 @@ class MainWindow(tk.Tk):
         self.sheet.highlight_rows(not_found_rows, fg='blue')
         self.sheet.display_rows(not_found_rows, all_rows_displayed=False)
 
+    def _clear_sheet(self):
+        self.sheet.select_all()
+        self.sheet.delete_rows(self.sheet.get_selected_rows())
 
     def _sheet_select_event(self, event=None):
         if event[0] == 'select_cell':
@@ -178,6 +200,7 @@ class MainWindow(tk.Tk):
             else:
                 url_pack, name_pack = '', ''
 
+            # 曲データをUIに反映
             self.label_title.set_text(title)
             self.label_title.set_click_event(ir_url)
 
@@ -196,22 +219,28 @@ class MainWindow(tk.Tk):
             self.textbox_search.set_text(re.sub(r'\s*\[.[^\[]+\]$', '', title))
 
     def _search_songs(self, event):
+        # テキストボックスの内容で曲を検索
         search_word = self.textbox_search.get_text()
         df_result = self.df_song_db[self.df_song_db['title'].str.contains(search_word, case=False, regex=False)]
         
-        # 譜面格納フォルダのパスと、含まれる差分の一覧を表示
+        # 検索結果：譜面格納フォルダのパスと、含まれる差分の一覧
         dirlist = {}
         for title, path in zip(df_result['title'], df_result['path']):
             path_dir = os.path.dirname(path)
             path_base = os.path.basename(path)
-            sabun_name = f'{title} ({path_base})'
+            diff_data = { 'title':title, 'diff':path_base }
 
             if path_dir in dirlist.keys():
-                dirlist[path_dir].append(sabun_name)
+                dirlist[path_dir].append(diff_data)
             else:
-                dirlist[path_dir] = [sabun_name]
+                dirlist[path_dir] = [diff_data]
         
-        print(json.dumps(dirlist, indent=2, ensure_ascii=False))
+        # ツリービューに譜面格納フォルダのパス・差分一覧を表示
+        self.treeview.delete(*self.treeview.get_children())
+        for path, diff_list in dirlist.items():
+            iid = self.treeview.insert(parent='', index='end', text=path, open=True)
+            for diff in diff_list:
+                self.treeview.insert(parent=iid, index='end', text=diff['title'], values=[diff['diff']])
 
 
 def read_songdata_db(songdata_db_path):
@@ -336,19 +365,27 @@ def download_table(table_index, df_song_db):
     return table_header, df_table
 
 
+def load_table(table_index, df_song_db):
+    """難易度表を読み込む。ローカルにキャッシュがなければダウンロードする
+    """
+    if not table_cache_exists(table_index):
+        print('キャッシュが存在しないので難易度表をダウンロード')
+        table_header, df_table = download_table(table_index, df_song_db)
+        save_table_cache(table_index, table_header, df_table)
+    else:
+        print('キャッシュから難易度表を読み込み')
+        table_header, df_table = load_table_cache(table_index)
+
+    return table_header, df_table
+
+
 def main():
     # song.db 読み込み
     df_song_db = read_songdata_db(SONGDATA_DB_PATH)
 
     # 難易度表読み込み
     # キャッシュがなければダウンロードする
-    if not table_cache_exists(DEFAULT_TABLE_INDEX):
-        print('キャッシュが存在しないので難易度表をダウンロード')
-        table_header, df_table = download_table(DEFAULT_TABLE_INDEX, df_song_db)
-        save_table_cache(DEFAULT_TABLE_INDEX, table_header, df_table)
-    else:
-        print('キャッシュから難易度表を読み込み')
-        table_header, df_table = load_table_cache(DEFAULT_TABLE_INDEX)
+    table_header, df_table = load_table(DEFAULT_TABLE_INDEX, df_song_db)
 
     # GUI表示
     main_window = MainWindow()

@@ -21,9 +21,10 @@ SONGDATA_DB_PATH = 'db/songdata.db'
 TABLE_LIST = [
     { 'name': 'NEW GENERATION 発狂難易度表', 'url': 'https://rattoto10.jounin.jp/table_insane.html' },
     { 'name': 'Satellite', 'url': 'https://stellabms.xyz/sl/table.html' },
+    { 'name': 'LN難易度表', 'url': 'http://flowermaster.web.fc2.com/lrnanido/gla/LN.html' },
 ]
 
-DEFAULT_TABLE_INDEX = 0
+DEFAULT_TABLE_INDEX = 2
 
 
 class HtmlBmsTableParser(HTMLParser):
@@ -81,6 +82,21 @@ class TextBox():
         return self.text.get()
 
 
+class CheckBox():
+    def __init__(self, parent, text, command):
+        self.value = tk.IntVar(value=1)
+        self.check = ttk.Checkbutton(parent, text=text, variable=self.value, command=command)
+
+    def get(self):
+        return self.check
+
+    def get_value(self):
+        return self.value.get()
+    
+    def set_value(self, val):
+        self.value.set(val)
+
+
 class MainWindow(tk.Tk):
     FONT_UI = ('MS UI Gothic', 9, 'normal')
     FONT_UI_UNDERLINE = ('MS UI Gothic', 9, 'underline')
@@ -107,10 +123,12 @@ class MainWindow(tk.Tk):
         self.sheet.readonly_columns(list(range(len(self.HEADERS))))
         self.sheet.readonly_header(list(range(len(self.HEADERS))))
         self.sheet.hide_columns(columns=[4])
-        self.sheet.column_width(column=0, width=50)
-        self.sheet.column_width(column=1, width=400)
 
         self.info_frame = tk.Frame(self)
+
+        self.check_only_notfound = CheckBox(parent=self.info_frame,
+                                            text='未所持のみ表示',
+                                            command=self._on_check_only_notfound)
 
         self.label_title = ClickableLabel(parent=self.info_frame, font=self.FONT_UI_TITLE)
 
@@ -133,21 +151,23 @@ class MainWindow(tk.Tk):
         self.treeview.heading('#0', text='Path/Title')
         self.treeview.heading('diff', text='差分')
 
-        style = ttk.Style()
-        style.configure("Treeview.Heading", font=self.FONT_UI)
-        style.configure("Treeview", font=self.FONT_UI)
-
         self.sheet.grid(row=0, column=0, sticky='nsew', padx=4, pady=2)
         self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
         self.search_frame.grid(row=2, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
-        self.label_title.get().grid(row=0, column=0, sticky='w', padx=4, pady=2)
-        self.label_url.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
-        self.label_urldiff.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
-        self.label_urlpack.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
+        self.check_only_notfound.get().grid(row=0, column=0, sticky='w')
+        self.label_title.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
+        self.label_url.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
+        self.label_urldiff.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
+        self.label_urlpack.get().grid(row=4, column=0, sticky='w', padx=4, pady=2)
 
         self.textbox_search.get().grid(row=0, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
         self.treeview.grid(row=1, column=0, sticky=tk.NSEW, padx=4, pady=2)
+
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=self.FONT_UI)
+        style.configure("Treeview", font=self.FONT_UI)
+        style.configure("TCheckbutton", font=self.FONT_UI)
 
     def set_song_db(self, df_song_db):
         self.df_song_db = df_song_db
@@ -157,21 +177,33 @@ class MainWindow(tk.Tk):
         self.df_table = df_table
         self.df_table_view = df_table.drop_duplicates(subset='index')
 
-        # シートをクリア
+        # シートに曲リストを表示
+        self._update_sheet(show_only_notfound=True)
+
+    def _update_sheet(self, show_only_notfound=False):
         self._clear_sheet()
 
-        # シートに曲リストを表示
         df = self.df_table_view
         for level, title, artist, found, index in zip(df['level'], df['title'], df['artist'], df['found'], df['index']):
             self.sheet.insert_row(values=(f'{self.table_header["symbol"]}{level}', title, artist, found, index), idx='end')
 
         not_found_rows = [index for found, index in zip(df['found'], df['index']) if not found]
         self.sheet.highlight_rows(not_found_rows, fg='blue')
-        self.sheet.display_rows(not_found_rows, all_rows_displayed=False)
+
+        if show_only_notfound:
+            self.sheet.display_rows(not_found_rows, all_rows_displayed=False)
+
+        self.sheet.select_row(0)
+        self.sheet.see(row=0)
 
     def _clear_sheet(self):
-        self.sheet.select_all()
-        self.sheet.delete_rows(self.sheet.get_selected_rows())
+        self.sheet.display_rows(None, all_rows_displayed=True)
+        self.sheet.set_sheet_data([])
+        self.sheet.column_width(column=0, width=50)
+        self.sheet.column_width(column=1, width=400)
+
+    def _on_check_only_notfound(self):
+        self._update_sheet(show_only_notfound=self.check_only_notfound.get_value())
 
     def _sheet_select_event(self, event=None):
         if event[0] == 'select_cell':
@@ -186,13 +218,13 @@ class MainWindow(tk.Tk):
             disp_row_idx = self.sheet.displayed_row_to_data(row_idx)
 
             # 曲データを取得
-            row = self.df_table_view.iloc[disp_row_idx]
+            row = self.df_table_view.iloc[disp_row_idx].replace(np.nan, '')
             title = row['title']
             md5 = row['md5']
             ir_url = f'http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5={md5}' if md5 else ''
             url = row['url'] if row['url'] else ''
             url_diff = row['url_diff'] if row['url_diff'] else ''
-            name_diff = f'- {row["name_diff"]}' if row['name_diff'] else ''
+            name_diff = f'- {row["name_diff"]}' if 'name_diff' in row.keys() and row['name_diff'] else ''
 
             if 'url_pack' in self.df_table_view.columns:
                 url_pack = row['url_pack'] if 'url_pack' in row.keys() else ''

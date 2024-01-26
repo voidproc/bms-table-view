@@ -12,6 +12,7 @@
 
 - Windows 11
 - Python 3.11.1
+- beatoraja 0.8.6
 
 ## 注意
 
@@ -27,7 +28,7 @@ pip install requests numpy pandas tksheet==6.3.5
 
 ### 設定ファイルを配置
 
-`config.json` に `songdata.db` のパスを書く（`config.example.json` をコピーして編集してください）。
+`config.json` に beatoraja の `songdata.db` のパスを書く（`config.example.json` をコピーして編集してください）。
 
 例：
 ```json

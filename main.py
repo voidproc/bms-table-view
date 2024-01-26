@@ -46,6 +46,7 @@ class MainWindow(tk.Tk):
                                            font=self.FONT_UI,
                                            values=[t.get('name') for t in TABLE_LIST])
         self.table_combobox.current(DEFAULT_TABLE_INDEX)
+        self.table_combobox.bind('<<ComboboxSelected>>', self._on_table_combobox_selected)
 
         self.sheet = Sheet(self.table_frame,
                            headers=self.HEADERS,
@@ -125,6 +126,12 @@ class MainWindow(tk.Tk):
 
         # シートに曲リストを表示
         self._update_sheet(show_only_notfound=True)
+
+    def _on_table_combobox_selected(self, event):
+        index = self.table_combobox.current()
+        self.table.load(index)
+        self.df_table_view = self.table.get_table().drop_duplicates(subset='index')
+        self._update_sheet(show_only_notfound=self.check_only_notfound.get_value())
 
     def _update_sheet(self, show_only_notfound=False):
         self._clear_sheet()

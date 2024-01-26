@@ -1,17 +1,13 @@
-import sqlite3
-import requests
-import json
-import pandas as pd
 import numpy as np
 from tksheet import Sheet
 import tkinter as tk
 import tkinter.ttk as ttk
-import webbrowser
-import os
-from hashlib import md5
-from urllib.parse import urljoin
-from html.parser import HTMLParser
 import re
+import os
+
+import tkwidgets
+import songdata
+import bmstable
 
 
 # ローカルの songdata.db パス
@@ -26,76 +22,6 @@ TABLE_LIST = [
 ]
 
 DEFAULT_TABLE_INDEX = 0
-
-
-class HtmlBmsTableParser(HTMLParser):
-    def handle_starttag(self, tag, attrs):
-        if tag.lower() != 'meta': return
-
-        name = ''
-        for key, value in attrs:
-            if key.lower() == 'name': name = value.lower()
-        
-        if name != 'bmstable': return
-
-        self.table_header_url = ''
-        for key, value in attrs:
-            if key.lower() == 'content': self.table_header_url = value
-
-    def get_table_header_json_url(self):
-        return self.table_header_url
-
-
-class ClickableLabel():
-    def __init__(self, parent, font):
-        self.text = tk.StringVar()
-        self.label = tk.Label(parent, textvariable=self.text, cursor='hand1', font=font)
-
-    def get(self):
-        return self.label
-    
-    def set_text(self, text):
-        self.text.set('')
-        if text:
-            self.text.set(text)
-
-    def set_click_event(self, url):
-        self.label.unbind('<Button-1>')
-        if url:
-            self.label.bind('<Button-1>', lambda e: self._link_click(url))
-
-    def _link_click(self, url):
-        webbrowser.open_new(url)
-
-
-class TextBox():
-    def __init__(self, parent, font):
-        self.text = tk.StringVar()
-        self.entry = tk.Entry(parent, textvariable=self.text, font=font, width=100)
-
-    def get(self):
-        return self.entry
-    
-    def set_text(self, text):
-        self.text.set(text)
-
-    def get_text(self):
-        return self.text.get()
-
-
-class CheckBox():
-    def __init__(self, parent, text, command):
-        self.value = tk.IntVar(value=1)
-        self.check = ttk.Checkbutton(parent, text=text, variable=self.value, command=command)
-
-    def get(self):
-        return self.check
-
-    def get_value(self):
-        return self.value.get()
-    
-    def set_value(self, val):
-        self.value.set(val)
 
 
 class MainWindow(tk.Tk):
@@ -115,6 +41,12 @@ class MainWindow(tk.Tk):
         self.table_frame = tk.Frame(self)
         self.table_frame.grid_columnconfigure(0, weight=1)
 
+        self.table_combobox = ttk.Combobox(self.table_frame,
+                                           state='readonly',
+                                           font=self.FONT_UI,
+                                           values=[t.get('name') for t in TABLE_LIST])
+        self.table_combobox.current(DEFAULT_TABLE_INDEX)
+
         self.sheet = Sheet(self.table_frame,
                            headers=self.HEADERS,
                            font=self.FONT_UI,
@@ -128,25 +60,25 @@ class MainWindow(tk.Tk):
         self.sheet.readonly_header(list(range(len(self.HEADERS))))
         self.sheet.hide_columns(columns=[4])
 
-        self.check_only_notfound = CheckBox(parent=self.table_frame,
+        self.check_only_notfound = tkwidgets.CheckBox(parent=self.table_frame,
                                             text='未所持のみ表示',
                                             command=self._on_check_only_notfound)
 
         self.info_frame = tk.Frame(self, bd=1, relief=tk.SOLID)
 
-        self.label_title = ClickableLabel(parent=self.info_frame, font=self.FONT_UI_TITLE)
+        self.label_title = tkwidgets.ClickableLabel(parent=self.info_frame, font=self.FONT_UI_TITLE)
 
-        self.label_url = ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
+        self.label_url = tkwidgets.ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
 
-        self.label_urldiff = ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
+        self.label_urldiff = tkwidgets.ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
 
-        self.label_urlpack = ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
+        self.label_urlpack = tkwidgets.ClickableLabel(parent=self.info_frame, font=self.FONT_UI)
 
         self.search_frame = tk.Frame(self)
         self.search_frame.grid_columnconfigure(0, weight=1)
         self.search_frame.grid_rowconfigure(1, weight=1)
 
-        self.textbox_search = TextBox(parent=self.search_frame, font=self.FONT_UI)
+        self.textbox_search = tkwidgets.TextBox(parent=self.search_frame, font=self.FONT_UI)
         self.textbox_search.get().bind('<Return>', self._search_songs)
 
         self.treeview = ttk.Treeview(master=self.search_frame, columns=('diff'), height=5)
@@ -156,33 +88,40 @@ class MainWindow(tk.Tk):
         self.treeview.heading('diff', text='差分')
         self.treeview.bind('<3>', self._on_treeview_rclick)
 
+        # レイアウト
+
+        # フレーム
         self.table_frame.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
         self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
         self.search_frame.grid(row=2, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
-        self.sheet.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
-        self.check_only_notfound.get().grid(row=1, column=0, sticky='w')
+        # フレーム内 (1)
+        self.table_combobox.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
+        self.sheet.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
+        self.check_only_notfound.get().grid(row=2, column=0, sticky='w')
 
+        # フレーム内 (2)
         self.label_title.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
         self.label_url.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
         self.label_urldiff.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
         self.label_urlpack.get().grid(row=4, column=0, sticky='w', padx=4, pady=2)
 
+        # フレーム内 (3)
         self.textbox_search.get().grid(row=0, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
         self.treeview.grid(row=1, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
+        # ttkウィジェットのスタイル（フォント）指定
         style = ttk.Style()
         style.configure("Treeview.Heading", font=self.FONT_UI)
         style.configure("Treeview", font=self.FONT_UI)
         style.configure("TCheckbutton", font=self.FONT_UI)
 
-    def set_song_db(self, df_song_db):
-        self.df_song_db = df_song_db
+    def set_songdata(self, df_songdata):
+        self.df_songdata = df_songdata
 
-    def set_table(self, table_header, df_table):
-        self.table_header = table_header
-        self.df_table = df_table
-        self.df_table_view = df_table.drop_duplicates(subset='index')
+    def set_table(self, table):
+        self.table = table
+        self.df_table_view = self.table.get_table().drop_duplicates(subset='index')
 
         # シートに曲リストを表示
         self._update_sheet(show_only_notfound=True)
@@ -192,7 +131,7 @@ class MainWindow(tk.Tk):
 
         df = self.df_table_view
         for level, title, artist, found, index in zip(df['level'], df['title'], df['artist'], df['found'], df['index']):
-            self.sheet.insert_row(values=(f'{self.table_header["symbol"]}{level}', title, artist, found, index), idx='end')
+            self.sheet.insert_row(values=(f'{self.table.get_header()["symbol"]}{level}', title, artist, found, index), idx='end')
 
         not_found_rows = [index for found, index in zip(df['found'], df['index']) if not found]
         self.sheet.highlight_rows(not_found_rows, fg='blue')
@@ -260,7 +199,7 @@ class MainWindow(tk.Tk):
     def _search_songs(self, event):
         # テキストボックスの内容で曲を検索
         search_word = self.textbox_search.get_text()
-        df_result = self.df_song_db[self.df_song_db['title'].str.contains(search_word, case=False, regex=False)]
+        df_result = self.df_songdata[self.df_songdata['title'].str.contains(search_word, case=False, regex=False)]
         
         # 検索結果：譜面格納フォルダのパスと、含まれる差分の一覧
         dirlist = {}
@@ -288,154 +227,20 @@ class MainWindow(tk.Tk):
 
         print(self.treeview.item(iid)['text'])
 
-def read_songdata_db(songdata_db_path):
-    connection = sqlite3.connect(songdata_db_path)
-    connection.row_factory = sqlite3.Row
-    cursor = connection.cursor()
-    df = pd.read_sql_query(sql='SELECT md5,sha256,title,artist,path FROM song', con=connection)
-    cursor.close()
-    connection.close()
-    return df
-
-
-def get_html_text(html_url):
-    res = requests.get(html_url)
-    return res.text
-
-
-def get_json(json_url):
-    res = requests.get(json_url)
-    text = res.text
-    data = json.loads(text)
-    return data
-
-
-def get_table_header_json_url(table_index):
-    table_html_text = get_html_text(TABLE_LIST[table_index]['url'])
-    html_parser = HtmlBmsTableParser()
-    html_parser.feed(table_html_text)
-    table_header_url = html_parser.get_table_header_json_url()
-    return urljoin(TABLE_LIST[table_index]['url'], table_header_url)
-
-
-def files_exist_all(files):
-    return all(map(os.path.isfile, files))
-
-
-def table_cache_hash(table_index):
-    return md5(TABLE_LIST[table_index]['url'].encode()).hexdigest()
-
-
-def table_cache_exists(table_index):
-    table_url_hash = table_cache_hash(table_index)
-
-    cache_files = [
-        f'cache/{table_url_hash}/table_header.json',
-        f'cache/{table_url_hash}/df_table.pkl',
-    ]
-
-    return files_exist_all(cache_files)
-
-
-def save_table_cache(table_index, table_header, df_table):
-    table_url_hash = table_cache_hash(table_index)
-
-    if not os.path.isdir('cache'):
-        os.mkdir('cache')
-    if not os.path.isdir(f'cache/{table_url_hash}'):
-        os.mkdir(f'cache/{table_url_hash}')
-
-    with open(f'cache/{table_url_hash}/table_header.json', 'wt') as f:
-        json.dump(table_header, f)
-    
-    df_table.to_pickle(f'cache/{table_url_hash}/df_table.pkl')
-
-
-def load_table_cache(table_index):
-    table_url_hash = table_cache_hash(table_index)
-
-    with open(f'cache/{table_url_hash}/table_header.json') as f:
-        table_header = json.load(f)
-
-    df_table = pd.read_pickle(f'cache/{table_url_hash}/df_table.pkl')
-
-    return table_header, df_table
-
-
-def download_table(table_index, df_song_db):
-    # 難易度表ヘッダを取得
-    print('難易度表ヘッダを取得')
-    table_header_json_url = get_table_header_json_url(table_index)
-    table_header = get_json(table_header_json_url)
-
-    # 難易度表を取得
-    print('難易度表を取得')
-    table_data_url = urljoin(table_header_json_url, table_header['data_url'])
-    table_data = get_json(table_data_url)
-    df_table_orig = pd.DataFrame(table_data)
-    df_table_orig['md5'].replace('', np.nan, inplace=True)
-    if not 'sha256' in df_table_orig.columns:
-        df_table_orig['sha256'] = ''
-    df_table_orig.reset_index(inplace=True)
-    df_table_orig.to_csv('_debug_csv/df_table_orig.csv')
-
-    # 難易度表とsong.dbから、所持している譜面を取得(1)
-    # md5による
-    print('マージ(md5)')
-    df_merged_md5 = pd.merge(df_table_orig, df_song_db, on='md5', how='left', suffixes=(None, '_r'))
-    try:
-        df_merged_md5.drop(columns=['sha256_r'], inplace=True)
-    except:
-        print('sha256 property not found.')
-
-    # 難易度表とsong.dbから、所持している譜面を取得(2)
-    # sha256による
-    print('マージ(sha256)')
-    df_merged_sha256 = pd.merge(df_table_orig, df_song_db, on='sha256', how='inner', suffixes=(None, '_r'))
-
-    # (1),(2)の結果をマージ
-    # これにより df_table の内容は次のようになる：
-    # - ベースは難易度表のデータ
-    # - 所持していれば path に保存先が格納されている
-    # - 重複所持していると、曲が同じで path が異なる行が複数となる
-    # - 難易度表の行番号が index に格納されている。リスト表示で曲の重複をしたくない場合は index の重複を削除する
-    print('マージ')
-    df_table = pd.merge(df_merged_md5, df_merged_sha256[['sha256', 'path']], on='sha256', how='left', suffixes=(None, '_r2'))
-    df_table['path'].fillna('', inplace=True)
-    df_table['path_r2'].fillna('', inplace=True)
-    df_table['path'] = df_table['path'] + df_table['path_r2']
-    df_table['found'] = df_table['path'] != ''
-    df_table.to_csv('_debug_csv/df_table.csv')
-
-    return table_header, df_table
-
-
-def load_table(table_index, df_song_db):
-    """難易度表を読み込む。ローカルにキャッシュがなければダウンロードする
-    """
-    if not table_cache_exists(table_index):
-        print('キャッシュが存在しないので難易度表をダウンロード')
-        table_header, df_table = download_table(table_index, df_song_db)
-        save_table_cache(table_index, table_header, df_table)
-    else:
-        print('キャッシュから難易度表を読み込み')
-        table_header, df_table = load_table_cache(table_index)
-
-    return table_header, df_table
-
 
 def main():
-    # song.db 読み込み
-    df_song_db = read_songdata_db(SONGDATA_DB_PATH)
+    # songdata.db 読み込み
+    df_songdata = songdata.read_songdata(SONGDATA_DB_PATH)
 
     # 難易度表読み込み
     # キャッシュがなければダウンロードする
-    table_header, df_table = load_table(DEFAULT_TABLE_INDEX, df_song_db)
+    table = bmstable.BmsTable(TABLE_LIST, df_songdata)
+    table.load(DEFAULT_TABLE_INDEX)
 
     # GUI表示
     main_window = MainWindow()
-    main_window.set_song_db(df_song_db)
-    main_window.set_table(table_header, df_table)
+    main_window.set_songdata(df_songdata)
+    main_window.set_table(table)
     main_window.mainloop()
 
 

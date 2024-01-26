@@ -13,6 +13,10 @@
 - Windows 11
 - Python 3.11.1
 
+## 注意
+
+`songdata.db` のバックアップを推奨します。
+
 ## 使い方
 
 ### モジュールのインストール
@@ -37,3 +41,4 @@ pip install requests numpy pandas tksheet==6.3.5
 ```
 python ./main.py
 ```
+

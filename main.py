@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -9,9 +10,6 @@ import tkwidgets
 import songdata
 import bmstable
 
-
-# ローカルの songdata.db パス
-SONGDATA_DB_PATH = 'db/songdata.db'
 
 # 難易度表URL
 TABLE_LIST = [
@@ -236,8 +234,11 @@ class MainWindow(tk.Tk):
 
 
 def main():
+    # songdata.db のパスを読み込み
+    config = json.load(open('config.json', 'r'))
+
     # songdata.db 読み込み
-    df_songdata = songdata.read_songdata(SONGDATA_DB_PATH)
+    df_songdata = songdata.read_songdata(config['SONGDATA_DB_PATH'])
 
     # 難易度表読み込み
     # キャッシュがなければダウンロードする

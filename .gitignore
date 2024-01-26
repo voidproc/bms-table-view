@@ -178,3 +178,4 @@ pyrightconfig.json
 _debug_csv/
 cache/
 db/
+config.json

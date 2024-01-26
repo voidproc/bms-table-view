@@ -140,6 +140,7 @@ class MainWindow(tk.Tk):
             self.sheet.insert_row(values=(f'{self.table.get_header()["symbol"]}{level}', title, artist, found, index), idx='end')
 
         not_found_rows = [index for found, index in zip(df['found'], df['index']) if not found]
+        self.sheet.dehighlight_all()
         self.sheet.highlight_rows(not_found_rows, fg='blue')
 
         if show_only_notfound:

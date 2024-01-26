@@ -32,7 +32,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
-        self.title('bm_sabun_collect_helper')
+        self.title('bms-table-view')
         self.geometry('800x600')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)

@@ -179,3 +179,4 @@ _debug_csv/
 cache/
 db/
 config.json
+.vscode/

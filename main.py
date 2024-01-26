@@ -5,6 +5,7 @@ import numpy as np
 import tkinter as tk
 import tkinter.ttk as ttk
 from tksheet import Sheet
+import subprocess
 
 import tkwidgets
 import songdata
@@ -230,7 +231,9 @@ class MainWindow(tk.Tk):
         if self.treeview.parent(iid) != '':
             iid = self.treeview.parent(iid)
 
-        print(self.treeview.item(iid)['text'])
+        dir_path = self.treeview.item(iid)['text']
+        if os.path.isdir(dir_path):
+            subprocess.Popen(['explorer', dir_path], shell=True)
 
 
 def main():

@@ -102,7 +102,7 @@ class BmsTable():
         table_data_url = urljoin(table_header_json_url, table_header['data_url'])
         table_data = _get_json(table_data_url)
         df_table_orig = pd.DataFrame(table_data)
-        df_table_orig['md5'].replace('', np.nan, inplace=True)
+        df_table_orig['md5'] = df_table_orig['md5'].replace('', np.nan)
         if not 'sha256' in df_table_orig.columns:
             df_table_orig['sha256'] = ''
         df_table_orig.reset_index(inplace=True)
@@ -130,8 +130,8 @@ class BmsTable():
         # - 難易度表の行番号が index に格納されている。リスト表示で曲の重複をしたくない場合は index の重複を削除する
         print('マージ')
         df_table = pd.merge(df_merged_md5, df_merged_sha256[['sha256', 'path']], on='sha256', how='left', suffixes=(None, '_r2'))
-        df_table['path'].fillna('', inplace=True)
-        df_table['path_r2'].fillna('', inplace=True)
+        df_table['path'] = df_table['path'].fillna('')
+        df_table['path_r2'] = df_table['path_r2'].fillna('')
         df_table['path'] = df_table['path'] + df_table['path_r2']
         df_table['found'] = df_table['path'] != ''
         df_table.to_csv('_debug_csv/df_table.csv')

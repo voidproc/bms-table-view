@@ -1,9 +1,9 @@
+import os
+import re
 import numpy as np
-from tksheet import Sheet
 import tkinter as tk
 import tkinter.ttk as ttk
-import re
-import os
+from tksheet import Sheet
 
 import tkwidgets
 import songdata

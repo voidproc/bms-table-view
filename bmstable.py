@@ -26,16 +26,16 @@ class HtmlBmsTableParser(HTMLParser):
         return self.table_header_url
 
 
-def files_exist_all(files):
+def _files_exist_all(files):
     return all(map(os.path.isfile, files))
 
 
-def get_html_text(html_url):
+def _get_html_text(html_url):
     res = requests.get(html_url)
     return res.text
 
 
-def get_json(json_url):
+def _get_json(json_url):
     res = requests.get(json_url)
     text = res.text
     data = json.loads(text)
@@ -43,6 +43,12 @@ def get_json(json_url):
 
 
 class BmsTable():
+    CACHE_ROOT_DIR = 'cache/'
+    CACHE_FILE_LIST = [
+        'table_header.json',
+        'df_table.pkl'
+    ]
+
     def __init__(self, table_list, df_songdata):
         self.table_list = table_list
         self.df_songdata = df_songdata
@@ -69,14 +75,18 @@ class BmsTable():
         self.current_table_index = table_index
 
     def _table_cache_exists(self, table_index):
+        cache_dir = self._cache_dir_path(table_index)
+        cache_files = [f'{cache_dir}{cache_file}' for cache_file in self.CACHE_FILE_LIST]
+        return _files_exist_all(cache_files)
+
+    def _cache_dir_path(self, table_index=None):
+        cache_root = self.CACHE_ROOT_DIR
+
+        if table_index == None:
+            return cache_root
+
         table_url_hash = self._table_cache_hash(table_index)
-
-        cache_files = [
-            f'cache/{table_url_hash}/table_header.json',
-            f'cache/{table_url_hash}/df_table.pkl',
-        ]
-
-        return files_exist_all(cache_files)
+        return f'{cache_root}{table_url_hash}/'
 
     def _table_cache_hash(self, table_index):
         return md5(self.table_list[table_index]['url'].encode()).hexdigest()
@@ -85,12 +95,12 @@ class BmsTable():
         # 難易度表ヘッダを取得
         print('難易度表ヘッダを取得')
         table_header_json_url = self._get_table_header_json_url(table_index)
-        table_header = get_json(table_header_json_url)
+        table_header = _get_json(table_header_json_url)
 
         # 難易度表を取得
         print('難易度表を取得')
         table_data_url = urljoin(table_header_json_url, table_header['data_url'])
-        table_data = get_json(table_data_url)
+        table_data = _get_json(table_data_url)
         df_table_orig = pd.DataFrame(table_data)
         df_table_orig['md5'].replace('', np.nan, inplace=True)
         if not 'sha256' in df_table_orig.columns:
@@ -130,35 +140,33 @@ class BmsTable():
         self.df_table = df_table
 
     def _get_table_header_json_url(self, table_index):
-        table_html_text = get_html_text(self.table_list[table_index]['url'])
+        table_html_text = _get_html_text(self.table_list[table_index]['url'])
         html_parser = HtmlBmsTableParser()
         html_parser.feed(table_html_text)
         table_header_url = html_parser.get_table_header_json_url()
         return urljoin(self.table_list[table_index]['url'], table_header_url)
 
     def _save_table_cache(self, table_index):
-        table_url_hash = self._table_cache_hash(table_index)
+        cache_root_dir = self._cache_dir_path()
+        if not os.path.isdir(cache_root_dir):
+            os.mkdir(cache_root_dir)
 
-        if not os.path.isdir('cache'):
-            os.mkdir('cache')
-        if not os.path.isdir(f'cache/{table_url_hash}'):
-            os.mkdir(f'cache/{table_url_hash}')
+        cache_dir = self._cache_dir_path(table_index)
+        if not os.path.isdir(cache_dir):
+            os.mkdir(cache_dir)
 
-        with open(f'cache/{table_url_hash}/table_header.json', 'wt') as f:
+        with open(f'{cache_dir}table_header.json', 'wt') as f:
             json.dump(self.table_header, f)
         
-        self.df_table.to_pickle(f'cache/{table_url_hash}/df_table.pkl')
-
-    def _table_cache_hash(self, table_index):
-        return md5(self.table_list[table_index]['url'].encode()).hexdigest()
+        self.df_table.to_pickle(f'{cache_dir}df_table.pkl')
 
     def _load_table_cache(self, table_index):
-        table_url_hash = self._table_cache_hash(table_index)
+        cache_dir = self._cache_dir_path(table_index)
 
-        with open(f'cache/{table_url_hash}/table_header.json') as f:
+        with open(f'{cache_dir}table_header.json') as f:
             table_header = json.load(f)
 
-        df_table = pd.read_pickle(f'cache/{table_url_hash}/df_table.pkl')
+        df_table = pd.read_pickle(f'{cache_dir}df_table.pkl')
 
         self.table_header = table_header
         self.df_table = df_table

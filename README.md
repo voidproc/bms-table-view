@@ -33,7 +33,7 @@ pip install requests numpy pandas tksheet==6.3.5
 例：
 ```json
 {
-    "SONGDATA_DB_PATH": "E:/beatoraja/player/player1/songdata.db"
+    "SONGDATA_DB_PATH": "E:/beatoraja/songdata.db"
 }
 ```
 

@@ -72,6 +72,8 @@ class BmsTable():
             print('キャッシュから難易度表を読み込み')
             self._load_table_cache(table_index)
 
+        self._merge_table_and_songdata()
+
         self.current_table_index = table_index
 
     def _table_cache_exists(self, table_index):
@@ -108,10 +110,20 @@ class BmsTable():
         df_table_orig.reset_index(inplace=True)
         df_table_orig.to_csv('_debug_csv/df_table_orig.csv')
 
+        self.table_header = table_header
+        self.df_table_orig = df_table_orig
+
+    def _merge_table_and_songdata(self):
+        """ダウンロードした難易度表とsongdata.dbの内容をマージする
+
+        難易度表の各曲のハッシュ（md5, sha256）によりマージし、
+        所持しているか（found）、格納パス（path）を得る
+        """
+
         # 難易度表とsong.dbから、所持している譜面を取得(1)
         # md5による
         print('マージ(md5)')
-        df_merged_md5 = pd.merge(df_table_orig, self.df_songdata, on='md5', how='left', suffixes=(None, '_r'))
+        df_merged_md5 = pd.merge(self.df_table_orig, self.df_songdata, on='md5', how='left', suffixes=(None, '_r'))
         try:
             df_merged_md5.drop(columns=['sha256_r'], inplace=True)
         except:
@@ -120,7 +132,7 @@ class BmsTable():
         # 難易度表とsong.dbから、所持している譜面を取得(2)
         # sha256による
         print('マージ(sha256)')
-        df_merged_sha256 = pd.merge(df_table_orig, self.df_songdata, on='sha256', how='inner', suffixes=(None, '_r'))
+        df_merged_sha256 = pd.merge(self.df_table_orig, self.df_songdata, on='sha256', how='inner', suffixes=(None, '_r'))
 
         # (1),(2)の結果をマージ
         # これにより df_table の内容は次のようになる：
@@ -136,7 +148,6 @@ class BmsTable():
         df_table['found'] = df_table['path'] != ''
         df_table.to_csv('_debug_csv/df_table.csv')
 
-        self.table_header = table_header
         self.df_table = df_table
 
     def _get_table_header_json_url(self, table_index):
@@ -158,7 +169,7 @@ class BmsTable():
         with open(f'{cache_dir}table_header.json', 'wt') as f:
             json.dump(self.table_header, f)
         
-        self.df_table.to_pickle(f'{cache_dir}df_table.pkl')
+        self.df_table_orig.to_pickle(f'{cache_dir}df_table.pkl')
 
     def _load_table_cache(self, table_index):
         cache_dir = self._cache_dir_path(table_index)
@@ -166,7 +177,7 @@ class BmsTable():
         with open(f'{cache_dir}table_header.json') as f:
             table_header = json.load(f)
 
-        df_table = pd.read_pickle(f'{cache_dir}df_table.pkl')
+        df_table_orig = pd.read_pickle(f'{cache_dir}df_table.pkl')
 
         self.table_header = table_header
-        self.df_table = df_table
+        self.df_table_orig = df_table_orig

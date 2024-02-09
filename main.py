@@ -146,8 +146,9 @@ class MainWindow(tk.Tk):
         if show_only_notfound:
             self.sheet.display_rows(not_found_rows, all_rows_displayed=False)
 
-        self.sheet.select_row(0)
-        self.sheet.see(row=0)
+        if len(not_found_rows) > 0:
+            self.sheet.select_row(0)
+            self.sheet.see(row=0)
 
     def _clear_sheet(self):
         self.sheet.display_rows(None, all_rows_displayed=True)

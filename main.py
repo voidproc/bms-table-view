@@ -244,7 +244,7 @@ def main():
     os.chdir(os.path.dirname(sys.argv[0]))
 
     # songdata.db のパスを読み込み
-    config = json.load(open('config.json', 'r'))
+    config = json.load(open('config.json', 'r', encoding='utf-8'))
 
     # songdata.db 読み込み
     df_songdata = songdata.read_songdata(config['SONGDATA_DB_PATH'])

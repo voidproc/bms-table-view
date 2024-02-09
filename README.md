@@ -11,20 +11,20 @@
 ## 動作環境
 
 - Windows 11
-- Python 3.11.1
 - beatoraja 0.8.6
+
+## 開発環境
+
+- Python 3.11.1
 
 ## 注意
 
 `songdata.db` のバックアップを推奨します。
 
-## 使い方
+## 使い方（.exe ファイルを利用する場合）
 
-### モジュールのインストール
-
-```
-pip install requests numpy pandas tksheet==6.3.5
-```
+### 準備
+ダウンロード: https://github.com/voidproc/bms-table-view/releases
 
 ### 設定ファイルを配置
 
@@ -39,10 +39,7 @@ pip install requests numpy pandas tksheet==6.3.5
 ```
 
 ### 起動
-
-```
-python ./main.py
-```
+`bms-table-view.exe` を実行してください。
 
 ### ウィンドウが表示されたら
 
@@ -54,3 +51,24 @@ python ./main.py
 - 曲名が検索用のテキストボックスにコピーされているので、Enterで検索
 - 所持している曲が表示される。右クリックでフォルダが開く
 - 開いたフォルダにダウンロードした差分をコピーする
+
+
+## 使い方（Python スクリプトを実行する場合）
+
+### 準備
+本リポジトリをクローンまたはソースコードをダウンロード
+
+### モジュールのインストール
+
+```
+pip install requests numpy pandas tksheet==6.3.5
+```
+
+### 設定ファイルを配置
+上記参照
+
+### 起動
+
+```
+python ./main.py
+```

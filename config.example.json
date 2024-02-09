@@ -1,3 +1,21 @@
 {
-    "SONGDATA_DB_PATH": "c:/path/to/songdata.db"
+    "SONGDATA_DB_PATH": "c:/path/to/songdata.db",
+    "TABLE_LIST": [
+        {
+            "name": "NEW GENERATION 通常難易度表",
+            "url": "https://rattoto10.jounin.jp/table.html"
+        },
+        {
+            "name": "NEW GENERATION 発狂難易度表",
+            "url": "https://rattoto10.jounin.jp/table_insane.html"
+        },
+        {
+            "name": "Satellite",
+            "url": "https://stellabms.xyz/sl/table.html"
+        },
+        {
+            "name": "LN難易度表",
+            "url": "http://flowermaster.web.fc2.com/lrnanido/gla/LN.html"
+        }
+    ]
 }

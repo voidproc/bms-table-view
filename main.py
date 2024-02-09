@@ -12,8 +12,8 @@ import songdata
 import bmstable
 
 
-# 難易度表URL
-TABLE_LIST = [
+# デフォルトの難易度表リスト
+TABLE_LIST_DEFAULT = [
     { 'name': 'NEW GENERATION 通常難易度表', 'url': 'https://rattoto10.jounin.jp/table.html' },
     { 'name': 'NEW GENERATION 発狂難易度表', 'url': 'https://rattoto10.jounin.jp/table_insane.html' },
     { 'name': 'Satellite', 'url': 'https://stellabms.xyz/sl/table.html' },
@@ -29,7 +29,7 @@ class MainWindow(tk.Tk):
     FONT_UI_TITLE = ('MS UI Gothic', 12, 'bold', 'underline')
     HEADERS = ['level', 'title', 'artist', 'found', 'index']
 
-    def __init__(self):
+    def __init__(self, table_list):
         tk.Tk.__init__(self)
 
         self.title('bms-table-view')
@@ -43,7 +43,7 @@ class MainWindow(tk.Tk):
         self.table_combobox = ttk.Combobox(self.table_frame,
                                            state='readonly',
                                            font=self.FONT_UI,
-                                           values=[t.get('name') for t in TABLE_LIST])
+                                           values=[t.get('name') for t in table_list])
         self.table_combobox.current(DEFAULT_TABLE_INDEX)
         self.table_combobox.bind('<<ComboboxSelected>>', self._on_table_combobox_selected)
 
@@ -245,13 +245,22 @@ def main():
     # songdata.db 読み込み
     df_songdata = songdata.read_songdata(config['SONGDATA_DB_PATH'])
 
+    # 難易度表リスト読み込み
+    # 設定ファイルに記述がなければデフォルトのリストを使用
+    table_list = []
+    if 'TABLE_LIST' in config.keys():
+        table_list = config['TABLE_LIST']
+
+    if len(table_list) == 0:
+        table_list = TABLE_LIST_DEFAULT
+
     # 難易度表読み込み
     # キャッシュがなければダウンロードする
-    table = bmstable.BmsTable(TABLE_LIST, df_songdata)
+    table = bmstable.BmsTable(table_list, df_songdata)
     table.load(DEFAULT_TABLE_INDEX)
 
     # GUI表示
-    main_window = MainWindow()
+    main_window = MainWindow(table_list)
     main_window.set_songdata(df_songdata)
     main_window.set_table(table)
     main_window.mainloop()

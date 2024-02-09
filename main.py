@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import json
 import numpy as np
 import tkinter as tk
@@ -239,6 +240,9 @@ class MainWindow(tk.Tk):
 
 
 def main():
+    # スクリプトのあるフォルダに移動
+    os.chdir(os.path.dirname(sys.argv[0]))
+
     # songdata.db のパスを読み込み
     config = json.load(open('config.json', 'r'))
 

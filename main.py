@@ -63,6 +63,7 @@ class MainWindow(tk.Tk):
         self.sheet.readonly_columns(list(range(len(self.HEADERS))))
         self.sheet.readonly_header(list(range(len(self.HEADERS))))
         self.sheet.hide_columns(columns=[4])
+        self.sheet.align_columns(columns=[3], align='center')
 
         self.check_only_notfound = tkwidgets.CheckBox(parent=self.table_frame,
                                             text='未所持のみ表示',
@@ -193,6 +194,8 @@ class MainWindow(tk.Tk):
         self.sheet.set_sheet_data([])
         self.sheet.column_width(column=0, width=50)
         self.sheet.column_width(column=1, width=400)
+        self.sheet.column_width(column=2, width=180)
+        self.sheet.column_width(column=3, width=80)
 
     def _on_check_only_notfound(self):
         self._update_sheet(show_only_notfound=self.check_only_notfound.get_value())

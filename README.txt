@@ -1,6 +1,6 @@
 # bms-table-view
 
-![screenshot](image/screenshot.png)
+※ https://github.com/voidproc/bms-table-view/blob/main/README.md と同じ内容です
 
 未所持の BMS 譜面を導入するための個人用ツール
 

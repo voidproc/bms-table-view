@@ -11,6 +11,7 @@ import subprocess
 import tkwidgets
 import songdata
 import bmstable
+import version
 
 
 # デフォルトの難易度表リスト
@@ -33,7 +34,9 @@ class MainWindow(tk.Tk):
     def __init__(self, table_list):
         tk.Tk.__init__(self)
 
-        self.title('bms-table-view')
+        title = f'bms-table-view {version.VERSION}'
+        self.title(title)
+
         self.geometry('800x600')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)

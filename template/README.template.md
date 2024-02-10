@@ -24,7 +24,7 @@
 ## 使い方（.exe ファイルを利用する場合）
 
 ### 準備
-ダウンロード: [bms-table-view_v1.1.3.zip](https://github.com/voidproc/bms-table-view/releases/download/v1.1.3/bms-table-view_v1.1.3.zip)
+ダウンロード: [bms-table-view_$version.zip](https://github.com/voidproc/bms-table-view/releases/download/$version/bms-table-view_$version.zip)
 
 ### 設定ファイルを配置
 

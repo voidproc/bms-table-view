@@ -85,12 +85,19 @@ class MainWindow(tk.Tk):
         self.textbox_search = tkwidgets.TextBox(parent=self.search_frame, font=self.FONT_UI)
         self.textbox_search.get().bind('<Return>', self._search_songs)
 
-        self.treeview = ttk.Treeview(master=self.search_frame, columns=('diff'), height=5)
+        self.treeview_frame = tk.Frame(self.search_frame)
+        self.treeview_frame.grid_columnconfigure(0, weight=1)
+        self.treeview_frame.grid_rowconfigure(0, weight=1)
+
+        self.treeview = ttk.Treeview(master=self.treeview_frame, columns=('diff'), height=5)
         self.treeview.column('#0', width=150)
         self.treeview.column('diff', width=80)
         self.treeview.heading('#0', text='Path/Title')
         self.treeview.heading('diff', text='差分')
         self.treeview.bind('<3>', self._on_treeview_rclick)
+
+        self.vscrollbar = ttk.Scrollbar(self.treeview_frame, orient="vertical", command=self.treeview.yview)
+        self.treeview.configure(yscrollcommand=self.vscrollbar.set)
 
         # レイアウト
 
@@ -112,7 +119,9 @@ class MainWindow(tk.Tk):
 
         # フレーム内 (3)
         self.textbox_search.get().grid(row=0, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
-        self.treeview.grid(row=1, column=0, sticky=tk.NSEW, padx=4, pady=2)
+        self.treeview_frame.grid(row=1, column=0, sticky=tk.NSEW)
+        self.treeview.grid(row=0, column=0, sticky=tk.NSEW, padx=4, pady=2)
+        self.vscrollbar.grid(row=0, column=1, sticky=tk.NSEW)
 
         # ttkウィジェットのスタイル（フォント）指定
         style = ttk.Style()

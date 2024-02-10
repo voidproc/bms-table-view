@@ -37,6 +37,7 @@ def _get_html_text(html_url):
 
 def _get_json(json_url):
     res = requests.get(json_url)
+    res.encoding = res.apparent_encoding
     text = res.text
     data = json.loads(text)
     return data

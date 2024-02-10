@@ -211,11 +211,11 @@ class MainWindow(tk.Tk):
     def _search_songs(self, event):
         # テキストボックスの内容で曲を検索
         search_word = self.textbox_search.get_text()
-        df_result = self.df_songdata[self.df_songdata['title'].str.contains(search_word, case=False, regex=False)]
+        df_result = self.df_songdata[self.df_songdata['title_inc_sub'].str.contains(search_word, case=False, regex=False)]
         
         # 検索結果：譜面格納フォルダのパスと、含まれる差分の一覧
         dirlist = {}
-        for title, path in zip(df_result['title'], df_result['path']):
+        for title, path in zip(df_result['title_inc_sub'], df_result['path']):
             path_dir = os.path.dirname(path)
             path_base = os.path.basename(path)
             diff_data = { 'title':title, 'diff':path_base }

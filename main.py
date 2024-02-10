@@ -29,7 +29,7 @@ class MainWindow(tk.Tk):
     FONT_UI = ('MS UI Gothic', 9, 'normal')
     FONT_UI_UNDERLINE = ('MS UI Gothic', 9, 'underline')
     FONT_UI_TITLE = ('MS UI Gothic', 12, 'bold', 'underline')
-    HEADERS = ['level', 'title', 'artist', 'found', 'index']
+    HEADERS = ['Level', 'Title', 'Artist', 'Found', 'index']
 
     def __init__(self, table_list):
         tk.Tk.__init__(self)
@@ -89,10 +89,12 @@ class MainWindow(tk.Tk):
         self.treeview_frame.grid_columnconfigure(0, weight=1)
         self.treeview_frame.grid_rowconfigure(0, weight=1)
 
-        self.treeview = ttk.Treeview(master=self.treeview_frame, columns=('diff'), height=5)
-        self.treeview.column('#0', width=150)
-        self.treeview.column('diff', width=80)
+        self.treeview = ttk.Treeview(master=self.treeview_frame, columns=('artist', 'diff'), height=5)
+        self.treeview.column('#0', width=400, stretch=0)
+        self.treeview.column('artist', width=100, stretch=1)
+        self.treeview.column('diff', width=100, stretch=1)
         self.treeview.heading('#0', text='Path/Title')
+        self.treeview.heading('artist', text='Artist')
         self.treeview.heading('diff', text='差分')
         self.treeview.bind('<3>', self._on_treeview_rclick)
 
@@ -224,10 +226,10 @@ class MainWindow(tk.Tk):
         
         # 検索結果：譜面格納フォルダのパスと、含まれる差分の一覧
         dirlist = {}
-        for title, path in zip(df_result['title_inc_sub'], df_result['path']):
+        for title, artist, path in zip(df_result['title_inc_sub'], df_result['artist'], df_result['path']):
             path_dir = os.path.dirname(path)
             path_base = os.path.basename(path)
-            diff_data = { 'title':title, 'diff':path_base }
+            diff_data = { 'title':title, 'artist':artist, 'diff':path_base }
 
             if path_dir in dirlist.keys():
                 dirlist[path_dir].append(diff_data)
@@ -239,7 +241,7 @@ class MainWindow(tk.Tk):
         for path, diff_list in dirlist.items():
             iid = self.treeview.insert(parent='', index='end', text=path, open=True)
             for diff in diff_list:
-                self.treeview.insert(parent=iid, index='end', text=diff['title'], values=[diff['diff']])
+                self.treeview.insert(parent=iid, index='end', text=diff['title'], values=[diff['artist'], diff['diff']])
 
     def _on_treeview_rclick(self, event):
         iid = self.treeview.identify_row(y=event.y)

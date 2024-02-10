@@ -177,8 +177,8 @@ class MainWindow(tk.Tk):
             title = row['title']
             md5 = row['md5']
             ir_url = f'http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5={md5}' if md5 else ''
-            url = row['url'] if row['url'] else ''
-            url_diff = row['url_diff'] if row['url_diff'] else ''
+            url = row['url'] if 'url' in row.keys() and row['url'] else ''
+            url_diff = row['url_diff'] if 'url_diff' in row.keys() and row['url_diff'] else ''
             name_diff = f'- {row["name_diff"]}' if 'name_diff' in row.keys() and row['name_diff'] else ''
 
             if 'url_pack' in self.df_table_view.columns:

@@ -6,6 +6,7 @@ import requests
 from html.parser import HTMLParser
 from urllib.parse import urljoin
 from hashlib import md5
+from natsort import index_natsorted
 
 
 class HtmlBmsTableParser(HTMLParser):
@@ -148,6 +149,8 @@ class BmsTable():
         df_table['path'] = df_table['path'] + df_table['path_r2']
         df_table['found'] = df_table['path'] != ''
         #df_table.to_csv('_debug_csv/df_table.csv')
+
+        df_table.sort_values('level', key=lambda x: np.argsort(index_natsorted(df_table['level'])), inplace=True)
 
         self.df_table = df_table
 

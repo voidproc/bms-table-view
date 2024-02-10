@@ -175,7 +175,9 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-_debug_csv/
+_build/
+_debug/
+_spec/
 cache/
 db/
 config.json

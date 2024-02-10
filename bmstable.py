@@ -110,7 +110,7 @@ class BmsTable():
         if not 'sha256' in df_table_orig.columns:
             df_table_orig['sha256'] = ''
         df_table_orig.reset_index(inplace=True)
-        #df_table_orig.to_csv('_debug_csv/df_table_orig.csv')
+        #df_table_orig.to_csv('_debug/df_table_orig.csv')
 
         self.table_header = table_header
         self.df_table_orig = df_table_orig
@@ -148,7 +148,7 @@ class BmsTable():
         df_table['path_r2'] = df_table['path_r2'].fillna('')
         df_table['path'] = df_table['path'] + df_table['path_r2']
         df_table['found'] = df_table['path'] != ''
-        #df_table.to_csv('_debug_csv/df_table.csv')
+        #df_table.to_csv('_debug/df_table.csv')
 
         df_table.sort_values('level', key=lambda x: np.argsort(index_natsorted(df_table['level'])), inplace=True)
 

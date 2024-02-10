@@ -61,7 +61,7 @@
 ### モジュールのインストール
 
 ```
-pip install requests numpy pandas natsort tksheet==6.3.5
+pip install requests numpy pandas tksheet==6.3.5
 ```
 
 ### 設定ファイルを配置

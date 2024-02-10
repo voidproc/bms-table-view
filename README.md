@@ -1,6 +1,6 @@
 # bms-table-view
 
-![screenshot](image/screenshot.png)
+![screenshot](image/screenshot_v1.2.0.png)
 
 未所持の BMS 譜面を導入するための個人用ツール
 

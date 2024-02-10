@@ -136,7 +136,7 @@ class MainWindow(tk.Tk):
 
     def set_table(self, table):
         self.table = table
-        self.df_table_view = self.table.get_table().drop_duplicates(subset='index')
+        self._make_table_for_view()
 
         # シートに曲リストを表示
         self._update_sheet(show_only_notfound=True)
@@ -144,8 +144,24 @@ class MainWindow(tk.Tk):
     def _on_table_combobox_selected(self, event):
         index = self.table_combobox.current()
         self.table.load(index)
-        self.df_table_view = self.table.get_table().drop_duplicates(subset='index')
+        self._make_table_for_view()
+
+        # シートに曲リストを表示
         self._update_sheet(show_only_notfound=self.check_only_notfound.get_value())
+
+    def _make_table_for_view(self):
+        """シート表示用の譜面リスト（df_table_view）を作成する。
+
+        - 重複の削除（'index'(難易度表上の並び順)による）
+        - 難易度表ヘッダに 'level_order' の指定がある場合は並び替え
+        """
+        df = self.table.get_table().drop_duplicates(subset='index')
+
+        if 'level_order' in self.table.get_header().keys():
+            level_order = {str(x): i for i, x in enumerate(self.table.get_header()['level_order'])}
+            df = df.sort_values('level', key=lambda col: col.map(level_order), kind='stable')
+
+        self.df_table_view = df
 
     def _update_sheet(self, show_only_notfound=False):
         self._clear_sheet()
@@ -154,7 +170,13 @@ class MainWindow(tk.Tk):
         for level, title, artist, found, index in zip(df['level'], df['title'], df['artist'], df['found'], df['index']):
             self.sheet.insert_row(values=(f'{self.table.get_header()["symbol"]}{level}', title, artist, found, index), idx='end')
 
-        not_found_rows = [index for found, index in zip(df['found'], df['index']) if not found]
+        not_found_rows = []
+        i_line_notfound = 0
+        for found in df['found']:
+            if not found:
+                not_found_rows += [i_line_notfound]
+            i_line_notfound += 1
+
         self.sheet.dehighlight_all()
         self.sheet.highlight_rows(not_found_rows, fg='blue')
 

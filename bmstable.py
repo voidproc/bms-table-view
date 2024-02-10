@@ -150,7 +150,9 @@ class BmsTable():
         df_table['found'] = df_table['path'] != ''
         #df_table.to_csv('_debug/df_table.csv')
 
-        df_table.sort_values('level', key=lambda x: np.argsort(index_natsorted(df_table['level'])), inplace=True)
+        # Treeviewの表示に影響があるので一旦コメントアウト
+        # 要調査
+        #df_table.sort_values('level', key=lambda x: np.argsort(index_natsorted(df_table['level'])), inplace=True)
 
         self.df_table = df_table
 

@@ -168,7 +168,8 @@ class MainWindow(tk.Tk):
 
         df = self.df_table_view
         for level, title, artist, found, index in zip(df['level'], df['title'], df['artist'], df['found'], df['index']):
-            self.sheet.insert_row(values=(f'{self.table.get_header()["symbol"]}{level}', title, artist, found, index), idx='end')
+            found_str = '' if found else '未所持'
+            self.sheet.insert_row(values=(f'{self.table.get_header()["symbol"]}{level}', title, artist, found_str, index), idx='end')
 
         not_found_rows = []
         i_line_notfound = 0

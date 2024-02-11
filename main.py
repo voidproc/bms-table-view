@@ -37,7 +37,7 @@ class MainWindow(tk.Tk):
         title = f'bms-table-view {version.VERSION}'
         self.title(title)
 
-        self.geometry('800x600')
+        self.geometry('800x700')
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
         
@@ -81,10 +81,22 @@ class MainWindow(tk.Tk):
 
         self.search_frame = tk.Frame(self)
         self.search_frame.grid_columnconfigure(0, weight=1)
-        self.search_frame.grid_rowconfigure(1, weight=1)
+        self.search_frame.grid_rowconfigure(2, weight=1)
 
         self.textbox_search = tkwidgets.TextBox(parent=self.search_frame, font=self.FONT_UI)
         self.textbox_search.get().bind('<Return>', self._search_songs)
+
+        self.search_option_frame = tk.Frame(self.search_frame)
+
+        self.check_use_re = tkwidgets.CheckBox(parent=self.search_option_frame,
+                                               text='正規表現',
+                                               command=None)
+        self.check_use_re.set_value(False)
+
+        self.check_case_sensitive = tkwidgets.CheckBox(parent=self.search_option_frame,
+                                                       text='大文字と小文字を区別',
+                                                       command=None)
+        self.check_case_sensitive.set_value(False)
 
         self.treeview_frame = tk.Frame(self.search_frame)
         self.treeview_frame.grid_columnconfigure(0, weight=1)
@@ -109,20 +121,25 @@ class MainWindow(tk.Tk):
         self.info_frame.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
         self.search_frame.grid(row=2, column=0, sticky=tk.NSEW, padx=4, pady=2)
 
-        # フレーム内 (1)
+        # フレーム内 (table_frame)
         self.table_combobox.grid(row=0, column=0, sticky='ew', padx=4, pady=2)
         self.sheet.grid(row=1, column=0, sticky='ew', padx=4, pady=2)
         self.check_only_notfound.get().grid(row=2, column=0, sticky='w')
 
-        # フレーム内 (2)
+        # フレーム内 (info_frame)
         self.label_title.get().grid(row=1, column=0, sticky='w', padx=4, pady=2)
         self.label_url.get().grid(row=2, column=0, sticky='w', padx=4, pady=2)
         self.label_urldiff.get().grid(row=3, column=0, sticky='w', padx=4, pady=2)
         self.label_urlpack.get().grid(row=4, column=0, sticky='w', padx=4, pady=2)
 
-        # フレーム内 (3)
+        # フレーム内 (search_frame)
         self.textbox_search.get().grid(row=0, column=0, sticky='ew', padx=4, pady=2, ipadx=2, ipady=2)
-        self.treeview_frame.grid(row=1, column=0, sticky=tk.NSEW)
+        self.search_option_frame.grid(row=1, column=0, sticky=tk.NSEW)
+        self.treeview_frame.grid(row=2, column=0, sticky=tk.NSEW)
+        # フレーム内 (search_option_frame)
+        self.check_use_re.get().pack(side=tk.LEFT)
+        self.check_case_sensitive.get().pack(side=tk.LEFT)
+        # フレーム内 (treeview_frame)
         self.treeview.grid(row=0, column=0, sticky=tk.NSEW, padx=4, pady=2)
         self.vscrollbar.grid(row=0, column=1, sticky=tk.NSEW)
 
@@ -248,7 +265,9 @@ class MainWindow(tk.Tk):
     def _search_songs(self, event):
         # テキストボックスの内容で曲を検索
         search_word = self.textbox_search.get_text()
-        df_result = self.df_songdata[self.df_songdata['title_inc_sub'].str.contains(search_word, case=False, regex=False)]
+        use_re = self.check_use_re.get_value()
+        case_sensitive = self.check_case_sensitive.get_value()
+        df_result = self.df_songdata[self.df_songdata['title_inc_sub'].str.contains(search_word, case=case_sensitive, regex=use_re)]
         
         # 検索結果：譜面格納フォルダのパスと、含まれる差分の一覧
         dirlist = {}

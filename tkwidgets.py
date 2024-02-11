@@ -29,6 +29,16 @@ class TextBox():
         self.text = tk.StringVar()
         self.entry = tk.Entry(parent, textvariable=self.text, font=font, width=100)
 
+        # コンテキストメニュー
+        self.menu = tk.Menu(parent, tearoff=0)
+        self.menu.add_command(label = 'Cut', command=self._on_cut, font=font)
+        self.menu.add_command(label = 'Copy', command=self._on_copy, font=font)
+        self.menu.add_command(label = 'Paste', command=self._on_paste, font=font)
+        self.menu.add_command(label = 'Delete', command=self._on_delete, font=font)
+        self.menu.add_command(label = 'Select all', command=self._on_select_all, font=font)
+
+        self.entry.bind('<Button-3>', self._popup_menu)
+
     def get(self):
         return self.entry
     
@@ -37,6 +47,27 @@ class TextBox():
 
     def get_text(self):
         return self.text.get()
+
+    def _on_cut(self):
+        self.entry.event_generate('<<Cut>>')
+
+    def _on_copy(self):
+        self.entry.event_generate('<<Copy>>')
+
+    def _on_paste(self):
+        self.entry.event_generate('<<Paste>>')
+
+    def _on_delete(self):
+        self.entry.delete(self.entry.index('sel.first'), self.entry.index('sel.last'))
+
+    def _on_select_all(self):
+        self.entry.select_range(0, 'end')
+
+    def _popup_menu(self, e):
+        try:
+            self.menu.tk_popup(e.x_root, e.y_root)
+        finally:
+            self.menu.grab_release()
 
 
 class CheckBox():

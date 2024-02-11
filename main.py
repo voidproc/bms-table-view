@@ -96,7 +96,7 @@ class MainWindow(tk.Tk):
         self.treeview.column('diff', width=100, stretch=1)
         self.treeview.heading('#0', text='Path/Title')
         self.treeview.heading('artist', text='Artist')
-        self.treeview.heading('diff', text='差分')
+        self.treeview.heading('diff', text='Filename')
         self.treeview.bind('<3>', self._on_treeview_rclick)
 
         self.vscrollbar = ttk.Scrollbar(self.treeview_frame, orient="vertical", command=self.treeview.yview)

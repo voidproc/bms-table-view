@@ -182,3 +182,4 @@ cache/
 db/
 config.json
 .vscode/
+_memo.txt
